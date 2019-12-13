@@ -149,14 +149,12 @@ var AbstractFileManager = /** @class */ (function () {
 var FileManager = /** @class */ (function (_super) {
     tslib.__extends(FileManager, _super);
     function FileManager() {
-        var _this = _super.call(this) || this;
-        _this.contents = {};
-        return _this;
+        return _super !== null && _super.apply(this, arguments) || this;
     }
-    FileManager.prototype.supports = function (filename, currentDirectory, options, environment) {
+    FileManager.prototype.supports = function () {
         return true;
     };
-    FileManager.prototype.supportsSync = function (filename, currentDirectory, options, environment) {
+    FileManager.prototype.supportsSync = function () {
         return true;
     };
     FileManager.prototype.loadFile = function (filename, currentDirectory, options, environment, callback) {
@@ -241,50 +239,29 @@ var FileManager = /** @class */ (function (_super) {
                                     fullFilename = extFilename;
                                 }
                             }
-                            var modified = false;
-                            if (self.contents[fullFilename]) {
+                            var readFileArgs = [fullFilename];
+                            if (!options.rawBuffer) {
+                                readFileArgs.push('utf-8');
+                            }
+                            if (options.syncImport) {
                                 try {
-                                    var stat = fs$1.statSync.apply(this, [fullFilename]);
-                                    if (stat.mtime.getTime() === self.contents[fullFilename].mtime.getTime()) {
-                                        fulfill({ contents: self.contents[fullFilename].data, filename: fullFilename });
-                                    }
-                                    else {
-                                        modified = true;
-                                    }
+                                    var data = fs$1.readFileSync.apply(this, readFileArgs);
+                                    fulfill({ contents: data, filename: fullFilename });
                                 }
                                 catch (e) {
-                                    modified = true;
+                                    filenamesTried.push(isNodeModule ? npmPrefix + fullFilename : fullFilename);
+                                    return tryPrefix(j + 1);
                                 }
                             }
-                            if (modified || !self.contents[fullFilename]) {
-                                var readFileArgs = [fullFilename];
-                                if (!options.rawBuffer) {
-                                    readFileArgs.push('utf-8');
-                                }
-                                if (options.syncImport) {
-                                    try {
-                                        var data = fs$1.readFileSync.apply(this, readFileArgs);
-                                        var stat = fs$1.statSync.apply(this, [fullFilename]);
-                                        self.contents[fullFilename] = { data: data, mtime: stat.mtime };
-                                        fulfill({ contents: data, filename: fullFilename });
-                                    }
-                                    catch (e) {
+                            else {
+                                readFileArgs.push(function (e, data) {
+                                    if (e) {
                                         filenamesTried.push(isNodeModule ? npmPrefix + fullFilename : fullFilename);
                                         return tryPrefix(j + 1);
                                     }
-                                }
-                                else {
-                                    readFileArgs.push(function (e, data) {
-                                        if (e) {
-                                            filenamesTried.push(isNodeModule ? npmPrefix + fullFilename : fullFilename);
-                                            return tryPrefix(j + 1);
-                                        }
-                                        var stat = fs$1.statSync.apply(this, [fullFilename]);
-                                        self.contents[fullFilename] = { data: data, mtime: stat.mtime };
-                                        fulfill({ contents: data, filename: fullFilename });
-                                    });
-                                    fs$1.readFile.apply(this, readFileArgs);
-                                }
+                                    fulfill({ contents: data, filename: fullFilename });
+                                });
+                                fs$1.readFile.apply(this, readFileArgs);
                             }
                         }
                         else {
@@ -1202,6 +1179,7 @@ var utils = /*#__PURE__*/Object.freeze({
     flattenArray: flattenArray
 });
 
+var anonymousFunc = /(<anonymous>|Function):(\d+):(\d+)/;
 /**
  * This is a centralized class of any error that could be thrown internally (mostly by the parser).
  * Besides standard .message it keeps some additional data like a path to the file where the error
@@ -1242,10 +1220,27 @@ var LessError = function LessError(e, fileContentMap, currentFilename) {
         this.line = typeof line === 'number' ? line + 1 : null;
         this.column = col;
         if (!this.line && this.stack) {
-            var found = this.stack.match(/(<anonymous>|Function):(\d+):(\d+)/);
+            var found = this.stack.match(anonymousFunc);
+            /**
+             * We have to figure out how this environment stringifies anonymous functions
+             * so we can correctly map plugin errors.
+             *
+             * Note, in Node 8, the output of anonymous funcs varied based on parameters
+             * being present or not, so we inject dummy params.
+             */
+            var func = new Function('a', 'throw new Error()');
+            var lineAdjust = 0;
+            try {
+                func();
+            }
+            catch (e) {
+                var match = e.stack.match(anonymousFunc);
+                var line_1 = parseInt(match[2]);
+                lineAdjust = 1 - line_1;
+            }
             if (found) {
                 if (found[2]) {
-                    this.line = parseInt(found[2]) - 2;
+                    this.line = parseInt(found[2]) + lineAdjust;
                 }
                 if (found[3]) {
                     this.column = parseInt(found[3]);

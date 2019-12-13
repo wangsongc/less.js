@@ -227,6 +227,9 @@ module.exports = function(grunt) {
             benchmark: {
                 command: "node benchmark/index.js"
             },
+            benchmarkbrowser: {
+                command: "node test/browser/generator/runner.js benchmark"
+            },
             opts: {
                 // test running with all current options (using `opts` since `options` means something already)
                 command: [
@@ -283,7 +286,7 @@ module.exports = function(grunt) {
             }
         },
 
-        "saucelabs-jasmine": sauceJobs,
+        "saucelabs-mocha": sauceJobs,
 
         // Clean the version of less built for the tests
         clean: {
@@ -342,13 +345,13 @@ module.exports = function(grunt) {
 
     grunt.registerTask("sauce", [
         "browsertest-lessjs",
-        "jasmine::build",
+        "shell:generatebrowser",
         "connect",
         "sauce-after-setup"
     ]);
 
     grunt.registerTask("sauce-after-setup", [
-        "saucelabs-jasmine:all",
+        "saucelabs-mocha:all",
         "clean:sauce_log"
     ]);
 
@@ -365,9 +368,7 @@ module.exports = function(grunt) {
 
     if (
         isNaN(Number(process.env.TRAVIS_PULL_REQUEST, 10)) &&
-        Number(process.env.TRAVIS_NODE_VERSION) === 4 &&
-        (process.env.TRAVIS_BRANCH === "master" ||
-            process.env.TRAVIS_BRANCH === "3.x")
+        (process.env.TRAVIS_BRANCH === "master")
     ) {
         testTasks.push("force:on");
         testTasks.push("sauce-after-setup");
@@ -398,8 +399,15 @@ module.exports = function(grunt) {
     ]);
 
     // Run benchmark
-    grunt.registerTask("benchmark", [
+    grunt.registerTask("benchmark-node", [
         "shell:testcjs",
         "shell:benchmark"
+    ]);
+
+    // Run all browser tests
+    grunt.registerTask("benchmark", [
+        "browsertest-lessjs",
+        "connect",
+        "shell:benchmarkbrowser"
     ]);
 };

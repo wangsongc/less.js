@@ -3,7 +3,7 @@ const html = require('html-template-tag')
 /**
  * Generates HTML templates from list of test sheets
  */
-module.exports = (stylesheets, helpers, spec) => {
+module.exports = (stylesheets, helpers, spec, less) => {
     if (!Array.isArray(helpers)) {
         helpers = [helpers]
     }
@@ -13,7 +13,7 @@ module.exports = (stylesheets, helpers, spec) => {
 <head>
     <meta charset="utf-8">
     
-    <title>Jasmine Spec Runner</title>
+    <title>Less.js Spec Runner</title>
 
     <!-- for each test, generate CSS/LESS link tags -->
     $${stylesheets.map(function(fullLessName) {
@@ -49,8 +49,34 @@ module.exports = (stylesheets, helpers, spec) => {
     </script>
     <script src="common.js"></script>
     <script src="../../${spec}"></script>
-    <script src="less.min.js"></script>
-    <script>mocha.run();</script>
+    <script src="${less || 'less.min.js'}"></script>
+    <script>
+        /** Saucelabs config */
+        onload = function() {
+            var runner = mocha.run();
+
+            var failedTests = [];
+            runner.on('end', function() {
+                window.mochaResults = runner.stats;
+                window.mochaResults.reports = failedTests;
+            });
+
+            runner.on('fail', logFailure);
+
+            function logFailure(test, err){
+                var flattenTitles = function(test){
+                    var titles = [];
+                    while (test.parent.title) {
+                        titles.push(test.parent.title);
+                        test = test.parent;
+                    }
+                    return titles.reverse();
+                };
+
+                failedTests.push({name: test.title, result: false, message: err.message, stack: err.stack, titles: flattenTitles(test) });
+            };
+        };
+    </script>
 </body>
 </html>
 `
