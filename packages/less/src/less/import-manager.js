@@ -27,6 +27,7 @@ export default environment => {
             // Deprecated? Unused outside of here, could be useful.
             this.queue = [];        // Files which haven't been imported yet
             this.files = [];        // List of files imported
+            this.fileCache = {};    // Holds the imported parse trees.
         }
 
         /**
@@ -53,8 +54,15 @@ export default environment => {
                 }
                 else {
                     const files = importManager.files
+                    const cache = importManager.fileCache
                     if (files.indexOf(fullPath) === -1) {
                         files.push(fullPath)
+                    }
+                    // Inline imports aren't cached here.
+                    // If we start to cache them, please make sure they won't conflict with non-inline imports of the
+                    // same name as they used to do before this comment and the condition below have been added.
+                    if (!cache[fullPath] && !importOptions.inline) {
+                        cache[fullPath] = { root, options: importOptions };
                     }
                     if (e && !importManager.error) { importManager.error = e; }
                     callback(e, root, importedEqualsRoot, fullPath);
@@ -120,9 +128,19 @@ export default environment => {
                 } else if (importOptions.inline) {
                     fileParsedFunc(null, contents, resolvedFilename);
                 } else {
-                    new Parser(newEnv, importManager, newFileInfo).parse(contents, (e, root) => {
-                        fileParsedFunc(e, root, resolvedFilename);
-                    });
+                    const cache = importManager.fileCache
+                    // import (multiple) parse trees apparently get altered and can't be cached.
+                    // TODO: investigate why this is
+                    if (cache[resolvedFilename]
+                        && !cache[resolvedFilename].options.multiple
+                        && !importOptions.multiple) {
+                        fileParsedFunc(null, cache[resolvedFilename].root, resolvedFilename);
+                    }
+                    else {
+                        new Parser(newEnv, importManager, newFileInfo).parse(contents, (e, root) => {
+                            fileParsedFunc(e, root, resolvedFilename);
+                        });
+                    }
                 }
             };
             let loadedFile;

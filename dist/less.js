@@ -9415,28 +9415,35 @@
           return new Expression(list);
       },
       each: function (list, rs) {
+          var _this = this;
           var rules = [];
           var newRules;
           var iterator;
+          var tryEval = function (val) {
+              if (val instanceof Node) {
+                  return val.eval(_this.context);
+              }
+              return val;
+          };
           if (list.value && !(list instanceof Quoted)) {
               if (Array.isArray(list.value)) {
-                  iterator = list.value;
+                  iterator = list.value.map(tryEval);
               }
               else {
-                  iterator = [list.value];
+                  iterator = [tryEval(list.value)];
               }
           }
           else if (list.ruleset) {
-              iterator = list.ruleset.rules;
+              iterator = tryEval(list.ruleset).rules;
           }
           else if (list.rules) {
-              iterator = list.rules;
+              iterator = list.rules.map(tryEval);
           }
           else if (Array.isArray(list)) {
-              iterator = list;
+              iterator = list.map(tryEval);
           }
           else {
-              iterator = [list];
+              iterator = [tryEval(list)];
           }
           var valueName = '@value';
           var keyName = '@key';
@@ -10166,6 +10173,7 @@
               // Deprecated? Unused outside of here, could be useful.
               this.queue = []; // Files which haven't been imported yet
               this.files = []; // List of files imported
+              this.fileCache = {}; // Holds the imported parse trees.
           }
           /**
            * Add an import to be imported
@@ -10188,8 +10196,15 @@
                   }
                   else {
                       var files = importManager.files;
+                      var cache = importManager.fileCache;
                       if (files.indexOf(fullPath) === -1) {
                           files.push(fullPath);
+                      }
+                      // Inline imports aren't cached here.
+                      // If we start to cache them, please make sure they won't conflict with non-inline imports of the
+                      // same name as they used to do before this comment and the condition below have been added.
+                      if (!cache[fullPath] && !importOptions.inline) {
+                          cache[fullPath] = { root: root, options: importOptions };
                       }
                       if (e && !importManager.error) {
                           importManager.error = e;
@@ -10247,9 +10262,19 @@
                       fileParsedFunc(null, contents, resolvedFilename);
                   }
                   else {
-                      new Parser(newEnv, importManager, newFileInfo).parse(contents, function (e, root) {
-                          fileParsedFunc(e, root, resolvedFilename);
-                      });
+                      var cache = importManager.fileCache;
+                      // import (multiple) parse trees apparently get altered and can't be cached.
+                      // TODO: investigate why this is
+                      if (cache[resolvedFilename]
+                          && !cache[resolvedFilename].options.multiple
+                          && !importOptions.multiple) {
+                          fileParsedFunc(null, cache[resolvedFilename].root, resolvedFilename);
+                      }
+                      else {
+                          new Parser(newEnv, importManager, newFileInfo).parse(contents, function (e, root) {
+                              fileParsedFunc(e, root, resolvedFilename);
+                          });
+                      }
                   }
               };
               var loadedFile;
