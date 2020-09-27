@@ -1,4 +1,4 @@
-import path from 'path';
+import * as path from 'path';
 import fs from './fs';
 import AbstractFileManager from '../less/environment/abstract-file-manager.js';
 

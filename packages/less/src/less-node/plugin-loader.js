@@ -1,4 +1,4 @@
-import path from 'path';
+import * as path from 'path';
 import AbstractPluginLoader from '../less/environment/abstract-plugin-loader.js';
 
 /**
