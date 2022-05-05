@@ -12,6 +12,7 @@ jobs:
         # Test all mainstream operating system
         os: [macos-latest, windows-latest]
         node: [16]
+      fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
      # Pull repo to test machine
@@ -40,3 +41,7 @@ jobs:
        run: node --version && npm --version 
      - name: Run unit test
        run: cd packages/less && npm test
+     - name: Setup tmate session
+       if: ${{ failure() }}
+       uses: mxschmitt/action-tmate@v3
+       timeout-minutes: 30
