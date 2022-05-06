@@ -57,6 +57,7 @@ Object.entries(config).forEach(entry => {
         return runner({
             file,
             timeout: 3500,
+            polling: 'raf', 
             args: ['disable-web-security']
         })
     })
