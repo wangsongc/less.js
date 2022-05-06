@@ -56,7 +56,7 @@ Object.entries(config).forEach(entry => {
         console.log(file)
         return runner({
             file,
-            timeout: 0,
+            timeout: 3500,
             args: ['disable-web-security']
         })
     })
