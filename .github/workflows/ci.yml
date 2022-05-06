@@ -2,7 +2,16 @@
 name: Nodejs Test
 
 # Triggers the workflow on push or pull request events
-on: [push, pull_request]
+on: 
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'version'
+        required: true
+        default: 'v1.0.0'
 
 jobs:
   platform_spec_test:
@@ -10,7 +19,7 @@ jobs:
     strategy:
       matrix:
         # Test all mainstream operating system
-        os: [macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         node: [16]
       fail-fast: false
     runs-on: ${{ matrix.os }}
