@@ -1,5 +1,5 @@
-describe('less.js browser behaviour', function() {
-    testLessEqualsInDocument();
+describe('less.js browser behaviour', async function() {
+    await testLessEqualsInDocument();
 
     it('has some log messages', function() {
         expect(logMessages.length).to.be.above(0);
