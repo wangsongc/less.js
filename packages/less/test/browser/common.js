@@ -78,16 +78,16 @@ ieFormat = function(text) {
 };
 
 testSheet = function (sheet) {
-    it(sheet.id + ' should match the expected output', function (done) {
+    it(sheet.id + ' should match the expected output', async function () {
         var lessOutputId = sheet.id.replace('original-', ''),
             expectedOutputId = 'expected-' + lessOutputId,
             lessOutputObj,
             lessOutput,
             expectedOutputHref = document.getElementById(expectedOutputId).href,
-            expectedOutput = loadFile(expectedOutputHref);
+            expectedOutput = await loadFile(expectedOutputHref);
 
         // Browser spec generates less on the fly, so we need to loose control
-        less.pageLoadFinished
+        await less.pageLoadFinished
             .then(function () {
                 lessOutputObj = document.getElementById(lessOutputId);
                 lessOutput = lessOutputObj.styleSheet ? lessOutputObj.styleSheet.cssText :
@@ -100,14 +100,14 @@ testSheet = function (sheet) {
                             text = ieFormat(text);
                         }
                         expect(lessOutput).to.equal(text);
-                        done();
+                        console.log('*************************success**************************')
                     })
                     .catch(function(err) {
-                        done(err);
+                        console.log(err)
                     });
             })
             .catch(function(err) {
-                done(err);
+                console.log(err)
             });
     });
 };
@@ -134,11 +134,11 @@ waitFor = function (waitFunc) {
 };
 
 testErrorSheet = function (sheet) {
-    it(sheet.id + ' should match an error', function (done) {
+    it(sheet.id + ' should match an error', async function () {
         var lessHref = sheet.href,
             id = 'less-error-message:' + extractId(lessHref),
             errorHref = lessHref.replace(/.less$/, '.txt'),
-            errorFile = loadFile(errorHref),
+            errorFile = await loadFile(errorHref),
             actualErrorElement,
             actualErrorMsg;
 
@@ -178,21 +178,21 @@ testErrorSheet = function (sheet) {
                     if (errorTxt == actualErrorMsg) {
                         actualErrorElement.style.display = 'none';
                     }
-                    done();
+                    console.log('*********************success********************');
                 })
                 .catch(function (err) {
-                    done(err);
+                    console.log(err);
                 });
         });
     });
 };
 
 testErrorSheetConsole = function (sheet) {
-    it(sheet.id + ' should match an error', function (done) {
+    it(sheet.id + ' should match an error', async function () {
         var lessHref = sheet.href,
             id = sheet.id.replace(/^original-less:/, 'less-error-message:'),
             errorHref = lessHref.replace(/.less$/, '.txt'),
-            errorFile = loadFile(errorHref),
+            errorFile = await loadFile(errorHref),
             actualErrorElement = document.getElementById(id),
             actualErrorMsg = logMessages[logMessages.length - 1]
                 .replace(/\nStack Trace\n[\s\S]*/, '');
@@ -211,7 +211,7 @@ testErrorSheetConsole = function (sheet) {
                     .replace(/\{node\}.*\{\/node\}/g, '')
                     .trim();
                 expect(actualErrorMsg).to.equal(errorTxt);
-                done();
+                console.log('*********************success********************');
             });
     });
 };
