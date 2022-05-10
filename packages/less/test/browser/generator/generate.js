@@ -57,7 +57,7 @@ Object.entries(config).forEach(entry => {
 
         return await runner({
             file,
-            timeout: 3500,
+            timeout: 0,
             // polling: 'raf', 
             args: ['no-sandbox', 'disable-setuid-sandbox','disable-web-security', 'disable-dev-shm-usage', 'single-process']
         })
