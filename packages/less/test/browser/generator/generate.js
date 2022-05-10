@@ -59,7 +59,7 @@ Object.entries(config).forEach(entry => {
             file,
             timeout: 3500,
             polling: 'raf', 
-            args: ['disable-web-security', 'disable-dev-shm-usage']
+            args: ['disable-web-security', 'disable-dev-shm-usage', 'single-process']
         })
     })
 })
