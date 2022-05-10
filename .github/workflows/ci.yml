@@ -48,9 +48,17 @@ jobs:
      - name: Print put node & npm version
        # Output useful info for debugging.
        run: node --version && npm --version 
+     - name: Setup tmate session
+       if: ${{ failure() }}
+       uses: mxschmitt/action-tmate@v3
+       timeout-minutes: 30
      - name: Run unit test
        run: |
-        sed -i "s@\!timeout@\!timeout \&\& timeout \!== 0@g" packages/less/node_modules/mocha-headless-chrome/lib/runner.js
+        if [ "${{ matrix.os }}" == "macos-latest" ]; then
+          sed -i "" "s@\!timeout@\!timeout \&\& timeout \!== 0@g" packages/less/node_modules/mocha-headless-chrome/lib/runner.js
+        else
+          sed -i "s@\!timeout@\!timeout \&\& timeout \!== 0@g" packages/less/node_modules/mocha-headless-chrome/lib/runner.js
+        fi
         cd packages/less && npm test
      - name: Setup tmate session
        if: ${{ failure() }}
