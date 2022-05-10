@@ -51,12 +51,13 @@ Object.entries(config).forEach(entry => {
     const paths = globby.sync(test.src)
     const templateString = template(paths, test.options.helpers, test.options.specs)
     fs.writeFileSync(path.join(cwd, test.options.outfile), templateString)
-    tests.push(() => {
+    tests.push(async () => {
         const file = 'http://localhost:8081/' + test.options.outfile
         console.log(file)
-        return runner({
+
+        return await runner({
             file,
-            timeout: 0,
+            timeout: 3500,
             polling: 'raf', 
             args: ['disable-web-security']
         })
