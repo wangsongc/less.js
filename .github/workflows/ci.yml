@@ -54,7 +54,7 @@ jobs:
        timeout-minutes: 30
      - name: Run unit test
        run: |
-        if [ "${{ matrix.os }}" == "macos-latest" ]; then
+        if ([ "${{ matrix.os }}" == "macos-latest" ]); then
           sed -i "" "s@\!timeout@\!timeout \&\& timeout \!== 0@g" packages/less/node_modules/mocha-headless-chrome/lib/runner.js
         else
           sed -i "s@\!timeout@\!timeout \&\& timeout \!== 0@g" packages/less/node_modules/mocha-headless-chrome/lib/runner.js
