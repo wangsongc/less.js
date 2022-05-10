@@ -52,14 +52,14 @@ jobs:
        if: ${{ failure() }}
        uses: mxschmitt/action-tmate@v3
        timeout-minutes: 30
+     - name: Setup mocha-headless-chrome
+       if:  ${{ matrix.os == 'macos-latest' }} 
+       run: sed -i "" "s@\!timeout@\!timeout \&\& timeout \!== 0@g" packages/less/node_modules/mocha-headless-chrome/lib/runner.js
+     - name: Setup mocha-headless-chrome
+       if:  ${{ matrix.os != 'macos-latest' }} 
+       run: sed -i "s@\!timeout@\!timeout \&\& timeout \!== 0@g" packages/less/node_modules/mocha-headless-chrome/lib/runner.js
      - name: Run unit test
-       run: |
-        if ([ "${{ matrix.os }}" == "macos-latest" ]); then
-          sed -i "" "s@\!timeout@\!timeout \&\& timeout \!== 0@g" packages/less/node_modules/mocha-headless-chrome/lib/runner.js
-        else
-          sed -i "s@\!timeout@\!timeout \&\& timeout \!== 0@g" packages/less/node_modules/mocha-headless-chrome/lib/runner.js
-        fi
-        cd packages/less && npm test
+       run: cd packages/less && npm test
      - name: Setup tmate session
        if: ${{ failure() }}
        uses: mxschmitt/action-tmate@v3
