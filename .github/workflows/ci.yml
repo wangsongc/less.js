@@ -18,7 +18,6 @@ jobs:
     name: 'Tests on ${{matrix.os}} with node${{matrix.node}}'
     strategy:
       matrix:
-        # Test all mainstream operating system
         os: [ubuntu-latest, macos-latest, windows-latest]
         node: [16]
       fail-fast: false
